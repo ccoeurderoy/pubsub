@@ -207,7 +207,8 @@ export class GoogleCloudPubSub implements GCPubSub {
     options?: GCSubscriptionOptions,
   ): Promise<Subscription> {
     const subscriptionName: string = this.getSubscriptionName(name);
-    const cachedSubscription: Subscription | undefined = this.subscriptions.get(subscriptionName);
+    const cacheKey: string = `${topic.name}/${subscriptionName}`;
+    const cachedSubscription: Subscription | undefined = this.subscriptions.get(cacheKey);
 
     if (cachedSubscription !== undefined) {
       return cachedSubscription;
@@ -216,7 +217,7 @@ export class GoogleCloudPubSub implements GCPubSub {
     const [subscription]: GetSubscriptionResponse = await topic
       .subscription(subscriptionName, options?.sub)
       .get({ autoCreate: true, ...options?.get });
-    this.subscriptions.set(subscriptionName, subscription);
+    this.subscriptions.set(cacheKey, subscription);
 
     return subscription;
   }

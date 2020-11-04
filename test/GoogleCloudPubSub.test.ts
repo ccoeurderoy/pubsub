@@ -133,10 +133,10 @@ test('GPS003 - should add prefix to subscription and topic', async (t: Execution
   await pubsub.listen(topicName);
 
   const [isTopicExisting] = await pubsub.client.topic(`algoan+${topicName}`).exists();
-  const [isSubcriptionExisting] = await pubsub.client.subscription(`test-app%${topicName}`).exists();
+  const [isSubscriptionExisting] = await pubsub.client.subscription(`test-app%${topicName}`).exists();
 
   t.true(isTopicExisting);
-  t.true(isSubcriptionExisting);
+  t.true(isSubscriptionExisting);
 });
 
 test('GPS004 - should not add prefix to subscription and topic', async (t: ExecutionContext): Promise<void> => {
@@ -151,12 +151,35 @@ test('GPS004 - should not add prefix to subscription and topic', async (t: Execu
   await pubsub.listen(topicName);
 
   const [isTopicExisting] = await pubsub.client.topic(`algoan+${topicName}`).exists();
-  const [isSubcriptionExisting] = await pubsub.client.subscription(`test-app%${topicName}`).exists();
+  const [isSubscriptionExisting] = await pubsub.client.subscription(`test-app%${topicName}`).exists();
   const [isTopicExistingWithoutPrefix] = await pubsub.client.topic(topicName).exists();
-  const [isSubcriptionExistingWithoutPrefix] = await pubsub.client.subscription(topicName).exists();
+  const [isSubscriptionExistingWithoutPrefix] = await pubsub.client.subscription(topicName).exists();
 
   t.false(isTopicExisting);
-  t.false(isSubcriptionExisting);
+  t.false(isSubscriptionExisting);
   t.true(isTopicExistingWithoutPrefix);
-  t.true(isSubcriptionExistingWithoutPrefix);
+  t.true(isSubscriptionExistingWithoutPrefix);
+});
+
+test('GPS005 - should create one subscription for each topic', async (t: ExecutionContext): Promise<void> => {
+  const topicName: string = 'topic_3';
+  const pubsub: GCPubSub = PubSubFactory.create({
+    transport: Transport.GOOGLE_PUBSUB,
+    options: {
+      projectId,
+    },
+  });
+  const secondPubSub: GCPubSub = PubSubFactory.create({
+    transport: Transport.GOOGLE_PUBSUB,
+    options: {
+      projectId,
+      topicsPrefix: 'prefix',
+    },
+  });
+
+  await pubsub.listen(topicName);
+  await secondPubSub.listen(topicName);
+
+  t.assert(pubsub.subscriptions.get(`projects/${projectId}/topics/${topicName}/${topicName}`));
+  t.assert(secondPubSub.subscriptions.get(`projects/${projectId}/topics/prefix+${topicName}/${topicName}`));
 });
